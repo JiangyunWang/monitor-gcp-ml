@@ -1,0 +1,51 @@
+# ---------------- docker-compose v.s. dockerfile -----------------
+# refer: https://www.reddit.com/r/docker/comments/9vjm9a/projects_with_dockercompose_but_without_dockerfile/
+# dockerfile: Only when need to create a custom container image from scratch
+# docker-compse: deploy a container from an image(public images are in docker hub)
+
+
+version: '3.7'
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.14.0
+    ports:
+      - 9090:9090
+    networks:
+      - internal
+        # wrong dir
+        #    volumes:
+        # - prometheus_volume:/prometheus/
+        # - ./prometheus/:/etc/prometheus/
+        # command:
+        # - '--config.file=/etc/prometheus/prometheus.yml'
+
+  pushgateway:
+    image: prom/pushgateway:v1.0.0
+    networks:
+      - internal
+    ports:
+     - 9091:9091
+
+  grafana:
+    image: grafana/grafana:6.4.4
+    ports:
+      - 3000:3000
+    networks:
+      - internal
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana_volume:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=monitor-gcp-ml
+
+volumes:
+  prometheus_volume:
+    external: false
+  grafana_volume:
+    external: false
+
+networks:
+  internal:
